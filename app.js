@@ -66,7 +66,7 @@ var UIController =  (function(){
             return{
                 type: document.querySelector(DOMstrings.inputType).value,
                 description: document.querySelector(DOMstrings.inputDescription).value,
-                value: document.querySelector(DOMstrings.inputValue).value
+                value: parseFloat(document.querySelector(DOMstrings.inputValue).value)
             };
         },
 
@@ -87,6 +87,20 @@ var UIController =  (function(){
             newHtml = newHtml.replace('%value%', obj.value);
 
             document.querySelector(element).insertAdjacentHTML('beforeend',newHtml);
+        },
+
+        clearFields: function(){
+            document.querySelector(DOMstrings.inputDescription).value = "";
+            document.querySelector(DOMstrings.inputValue).value = "";
+
+            document.querySelector(DOMstrings.inputDescription).focus();
+            /*Another way to do it-
+                fields = document.querySelectorAll(DOMstings.inputDescription + ',' + DOMstrings.inputValue);
+                fields is a list, line below is converting list type to an array
+                fieldsArr = Array.prototype.slice.call(fields);
+                fieldsArr.forEach(function(current, index, array){
+                    current.value = "";
+                }) */
         },
 
         getDOMstrings: function(){
@@ -111,11 +125,16 @@ var controller = (function(budgetCtrl, UICtrl){
         var input, newItem;
         //getting input from UI
         input = UICtrl.getInput();
-        console.log(input);
+
+        if(input.description !== "" && !isNaN(input.value) && input.value > 0){
         //storing the input into internl storage
         newItem = budgetCtrl.addInput(input.type, input.description, input.value);
 
         UICtrl.addNewItem(input.type, newItem);
+
+        UICtrl.clearFields();
+
+        }
     }
 
     return{
