@@ -13,6 +13,22 @@ var budgetController = (function(){
         this.value = value;
     };
 
+    //function to calculate total expense and income and store it in the allrecords obj
+    var calculateTotals = function(){
+        var sum=0;
+        allRecords.allItems["exp"].forEach(function(curr){
+            sum += curr.value;
+        });
+        allRecords.totals["exp"] = sum;
+
+        sum=0;
+        allRecords.allItems["inc"].forEach(function(curr){
+            sum += curr.value;
+        });
+        allRecords.totals["inc"] = sum;
+        
+    }
+
     //this is a structure that uses above custom data types to save expenses and incomes (all related datas packed in one) along with present totals
     var allRecords = {
         allItems: {
@@ -22,7 +38,11 @@ var budgetController = (function(){
         totals:{
             exp: 0,
             inc: 0
-        }
+        },
+
+        budget: 0,
+
+        percentage: -1
     }
 
 
@@ -43,6 +63,26 @@ var budgetController = (function(){
             return newItem;
         },
 
+        calculateBudget: function(){
+
+            calculateTotals();
+
+            allRecords.budget = allRecords.totals["inc"] - allRecords.totals["exp"];
+
+            if(allRecords.totals["inc"] >= allRecords.totals["exp"])
+                allRecords.percentage = Math.round((allRecords.totals["exp"] / allRecords.totals["inc"]) * 100);
+
+            return {
+                totalInc : allRecords.totals["inc"],
+
+                totalExp : allRecords.totals["exp"],
+
+                budget : allRecords.budget,
+
+                percentage : allRecords.percentage
+            }
+        },
+
         testFunc : function(){
             console.log(allRecords);
         }
@@ -50,6 +90,8 @@ var budgetController = (function(){
 })();
 
 
+
+////////////////////////////////////////////////////////////////
 var UIController =  (function(){
 
     var DOMstrings = {
@@ -58,7 +100,11 @@ var UIController =  (function(){
         inputValue: '.add__value',
         inputButton: '.add__btn',
         incomeList: '.income__list',
-        expenseList: '.expenses__list'
+        expenseList: '.expenses__list',
+        budgetLabel: '.budget__value',
+        incomeLabel: '.budget__income--value',
+        expenseLabel: '.budget__expenses--value',
+        expensePercentage: '.budget__expenses--percentage'
     };
 
     return{
@@ -103,6 +149,18 @@ var UIController =  (function(){
                 }) */
         },
 
+        displayBudget: function(obj){
+
+            document.querySelector(DOMstrings.budgetLabel).textContent = obj.budget>0 ? "+ "+obj.budget : obj.budget;
+            document.querySelector(DOMstrings.incomeLabel).textContent = obj.totalInc;
+            document.querySelector(DOMstrings.expenseLabel).textContent = obj.totalExp;
+
+            if(obj.percentage != -1)
+                document.querySelector(DOMstrings.expensePercentage).textContent = obj.percentage;
+            else
+                document.querySelector(DOMstrings.expensePercentage).textContent = "---";
+        },
+
         getDOMstrings: function(){
             return DOMstrings;
         }
@@ -110,7 +168,19 @@ var UIController =  (function(){
 })();
 
 
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
 var controller = (function(budgetCtrl, UICtrl){
+
+    var updateBudget = function(){
+        //initiate calculate budget + get budget calculated
+        budget = budgetCtrl.calculateBudget();
+
+        //display updated budget
+        UICtrl.displayBudget(budget);
+    }
+
     var setupEventListeners = function(){
         var DOM = UICtrl.getDOMstrings();
         document.querySelector(DOM.inputButton).addEventListener('click',ctrlAddItem);
@@ -133,13 +203,21 @@ var controller = (function(budgetCtrl, UICtrl){
         UICtrl.addNewItem(input.type, newItem);
 
         UICtrl.clearFields();
-
+        
+        updateBudget();
         }
     }
 
     return{
         init: function(){
             setupEventListeners();
+
+            UICtrl.displayBudget({
+                totalInc : 0,
+                totalExp : 0,
+                budget : 0,
+                percentage : "---"
+            })
         }
     };
 })(budgetController,UIController);
